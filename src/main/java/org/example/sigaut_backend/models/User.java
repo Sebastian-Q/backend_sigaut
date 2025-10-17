@@ -2,10 +2,7 @@ package org.example.sigaut_backend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
@@ -13,6 +10,8 @@ import java.util.List;
 @Table(name = "users")
 @Getter
 @Setter
+@Builder(builderClassName = "Builder", toBuilder = true)
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -41,6 +40,9 @@ public class User {
     @Column(length = 150)
     private String direction;
 
+    @Column(length = 512)
+    private String image_url;
+
     @OneToMany(mappedBy = "user")
     @JsonIgnore
     private List<Category> categories;
@@ -54,7 +56,7 @@ public class User {
     private List<Sale> sales;
 
 
-    public User(String name, String paternalName, String maternalName, String email, String username, String password, String direction) {
+    public User(String name, String paternalName, String maternalName, String email, String username, String password, String direction, String image_url) {
         this.name = name;
         this.paternalName = paternalName;
         this.maternalName = maternalName;
@@ -62,5 +64,6 @@ public class User {
         this.username = username;
         this.password = password;
         this.direction = direction;
+        this.image_url = image_url;
     }
 }

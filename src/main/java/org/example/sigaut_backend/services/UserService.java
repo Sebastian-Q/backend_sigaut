@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @Transactional
 public class UserService {
@@ -40,6 +42,11 @@ public class UserService {
         return userRepository.findByUsername(username)
                 .map(user -> new ResponseEntity<>(new ApiResponse(user, HttpStatus.OK), HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(new ApiResponse(USER_NOT_FOUND_MESSAGE, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
     }
 
     @Transactional(readOnly = true)
@@ -102,6 +109,14 @@ public class UserService {
         return new ResponseEntity<>(new ApiResponse("Usuario eliminada correctamente", HttpStatus.OK), HttpStatus.OK);
     }
 
+    @Transactional
+    public void updateProfilePicture(Long userId, String imgaeUrl) {
+        userRepository.findById(userId).ifPresent(user -> {
+            user.setImage_url(imgaeUrl);
+            userRepository.save(user);
+        });
+    }
+
     private boolean updateUserEmailIfValid(User updatedUser, User existingUser) {
         if (updatedUser.getEmail() != null && !updatedUser.getEmail().isEmpty()
                 && !updatedUser.getEmail().equals(existingUser.getEmail())) {
@@ -123,5 +138,4 @@ public class UserService {
         }
         return true;
     }
-
 }

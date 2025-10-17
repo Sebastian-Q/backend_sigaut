@@ -2,18 +2,26 @@ package org.example.sigaut_backend.controller.user;
 
 import org.example.sigaut_backend.config.ApiResponse;
 import org.example.sigaut_backend.models.User;
+import org.example.sigaut_backend.services.FirebaseStorageService;
 import org.example.sigaut_backend.services.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = {"*"})
 public class UserController {
     private final UserService userService;
+    private final FirebaseStorageService firebaseStorageService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, FirebaseStorageService firebaseStorageService) {
         this.userService = userService;
+        this.firebaseStorageService = firebaseStorageService;
     }
 
     @GetMapping
@@ -39,6 +47,19 @@ public class UserController {
     @PostMapping
     public ResponseEntity<ApiResponse> createUser(@RequestBody User user) {
         return userService.createUser(user);
+    }
+
+    @PostMapping("/{id}/profile-picture")
+    public ResponseEntity<ApiResponse> uploadProfilePicture(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        try {
+            String fileName = UUID.randomUUID().toString() + "-" + file.getOriginalFilename();
+            String imageUrl = firebaseStorageService.uploadFile(file.getBytes(), fileName, file.getContentType());
+            userService.updateProfilePicture(id, imageUrl);
+            return ResponseEntity.ok(new ApiResponse(imageUrl, HttpStatus.OK));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse("Error al subir la imagen", HttpStatus.INTERNAL_SERVER_ERROR));
+        }
     }
 
     @PutMapping
