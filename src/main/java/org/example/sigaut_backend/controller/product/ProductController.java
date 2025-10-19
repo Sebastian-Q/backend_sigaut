@@ -1,6 +1,7 @@
 package org.example.sigaut_backend.controller.product;
 
 import org.example.sigaut_backend.config.ApiResponse;
+import org.example.sigaut_backend.controller.product.dto.ProductRequest;
 import org.example.sigaut_backend.models.Product;
 import org.example.sigaut_backend.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,8 +35,8 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse> createProduct(@RequestBody Product product) {
-        return productService.createProduct(product);
+    public ResponseEntity<ApiResponse> createProduct(@RequestBody ProductRequest request) {
+        return productService.createProduct(request);
     }
 
     @PutMapping

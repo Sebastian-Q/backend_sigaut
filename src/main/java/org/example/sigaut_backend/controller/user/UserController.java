@@ -42,7 +42,7 @@ public class UserController {
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse> updateUserById(@PathVariable Long id, @RequestBody User updatedUser) {
+    public ResponseEntity<ApiResponse> updateUserById(@RequestBody User updatedUser) {
         return userService.updateUserById(updatedUser);
     }
 

@@ -1,8 +1,11 @@
 package org.example.sigaut_backend.services;
 
 import org.example.sigaut_backend.config.ApiResponse;
+import org.example.sigaut_backend.controller.category.dto.CategoryRequest;
 import org.example.sigaut_backend.models.Category;
+import org.example.sigaut_backend.models.User;
 import org.example.sigaut_backend.repository.CategoryRepository;
+import org.example.sigaut_backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +19,12 @@ public class CategoryService {
     private static final String CATEGORY_NOT_FOUND_MESSAGE = "Categoria no encontrado";
 
     private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository, UserRepository userRepository) {
         this.categoryRepository = categoryRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
@@ -42,10 +47,15 @@ public class CategoryService {
     }
 
     @Transactional
-    public ResponseEntity<ApiResponse> createCategory(Category category) {
-        if (categoryRepository.findByClave(category.getClave()).isPresent()) {
+    public ResponseEntity<ApiResponse> createCategory(CategoryRequest request) {
+        User currentUser = userRepository.findById(request.getIdUser()).orElseThrow();
+
+        System.out.println("Usuario: " + currentUser.getUsername());
+        if (categoryRepository.findByClave(request.getClave()).isPresent()) {
             return new ResponseEntity<>(new ApiResponse(CLAVE_EXISTS_MESSAGE, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
         }
+        Category category = new Category(request.getClave(), request.getName(), request.getDescription());
+        category.setUser(currentUser);
         Category savedCategory = categoryRepository.save(category);
         return new ResponseEntity<>(new ApiResponse(savedCategory, HttpStatus.OK), HttpStatus.OK);
     }

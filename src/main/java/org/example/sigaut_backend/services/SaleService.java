@@ -1,10 +1,13 @@
 package org.example.sigaut_backend.services;
 
 import org.example.sigaut_backend.config.ApiResponse;
+import org.example.sigaut_backend.controller.sale.dto.SaleRequest;
 import org.example.sigaut_backend.models.Product;
 import org.example.sigaut_backend.models.Sale;
+import org.example.sigaut_backend.models.User;
 import org.example.sigaut_backend.repository.ProductRepository;
 import org.example.sigaut_backend.repository.SaleRepository;
+import org.example.sigaut_backend.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -16,15 +19,16 @@ import java.util.Optional;
 @Service
 @Transactional
 public class SaleService {
-    private static final String BARCODE_EXISTS_MESSAGE = "El codigo de barras ya está registrado";
     private static final String SALE_NOT_FOUND_MESSAGE = "Venta no encontrada";
 
     private final SaleRepository saleRepository;
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
 
-    public SaleService(SaleRepository saleRepository, ProductRepository productRepository) {
+    public SaleService(SaleRepository saleRepository, ProductRepository productRepository, UserRepository userRepository) {
         this.saleRepository = saleRepository;
         this.productRepository = productRepository;
+        this.userRepository = userRepository;
     }
 
     // 🔵 Obtener todas las ventas
@@ -40,14 +44,15 @@ public class SaleService {
     }
 
     // 🟢 Crear venta y actualizar stock
-    public ResponseEntity<ApiResponse> createSale(Sale sale) {
+    public ResponseEntity<ApiResponse> createSale(SaleRequest request) {
+        User currentUser = userRepository.findById(request.getIdUser()).orElseThrow();
         // Validar lista de productos
-        if (sale.getProductsList() == null || sale.getProductsList().isEmpty()) {
+        if (request.getProductsList() == null || request.getProductsList().isEmpty()) {
             return new ResponseEntity<>(new ApiResponse("Debe incluir al menos un producto", HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
         }
 
         // Validar stock disponible
-        for (Product p : sale.getProductsList()) {
+        for (Product p : request.getProductsList()) {
             Optional<Product> productOpt = productRepository.findById(p.getId());
             if (productOpt.isEmpty()) {
                 return new ResponseEntity<>(new ApiResponse("Producto con ID " + p.getId() + " no existe", HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
@@ -60,17 +65,22 @@ public class SaleService {
         }
 
         // Actualizar stock
-        for (Product p : sale.getProductsList()) {
+        for (Product p : request.getProductsList()) {
             Product product = productRepository.findById(p.getId()).get();
             product.setStock(product.getStock() - p.getAccountSale());
             productRepository.save(product);
         }
 
         // Establecer fecha actual si no se envía
-        if (sale.getDateSale() == null) {
-            sale.setDateSale(new Date());
-        }
-
+        Sale sale = new Sale(
+                request.getTotal(),
+                request.getAmountSale(),
+                new Date(),
+                request.getEmployee(),
+                request.getPayMethod()
+        );
+        sale.setProductsList(request.getProductsList());
+        sale.setUser(currentUser);
         Sale savedSale = saleRepository.save(sale);
         return new ResponseEntity<>(new ApiResponse(savedSale, HttpStatus.OK), HttpStatus.OK);
     }
