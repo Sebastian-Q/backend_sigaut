@@ -1,7 +1,7 @@
 package org.example.sigaut_backend.controller.sale;
 
 import org.example.sigaut_backend.config.ApiResponse;
-import org.example.sigaut_backend.models.Sale;
+import org.example.sigaut_backend.controller.sale.dto.SaleRequest;
 import org.example.sigaut_backend.services.SaleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,8 +29,8 @@ public class SaleController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse> createSale(@RequestBody Sale sale) {
-        return saleService.createSale(sale);
+    public ResponseEntity<ApiResponse> createSale(@RequestBody SaleRequest request) {
+        return saleService.createSale(request);
     }
 
     @DeleteMapping("/{id}")

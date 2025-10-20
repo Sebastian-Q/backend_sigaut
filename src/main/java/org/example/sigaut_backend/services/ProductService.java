@@ -1,10 +1,13 @@
 package org.example.sigaut_backend.services;
 
 import org.example.sigaut_backend.config.ApiResponse;
+import org.example.sigaut_backend.controller.product.dto.ProductRequest;
 import org.example.sigaut_backend.models.Category;
 import org.example.sigaut_backend.models.Product;
+import org.example.sigaut_backend.models.User;
 import org.example.sigaut_backend.repository.CategoryRepository;
 import org.example.sigaut_backend.repository.ProductRepository;
+import org.example.sigaut_backend.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -22,11 +25,12 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
 
-    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository) {
+    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository, UserRepository userRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
-
+        this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
@@ -49,23 +53,35 @@ public class ProductService {
     }
 
     @Transactional
-    public ResponseEntity<ApiResponse> createProduct(Product product) {
+    public ResponseEntity<ApiResponse> createProduct(ProductRequest request) {
+        User currentUser = userRepository.findById(request.getIdUser()).orElseThrow();
         // Validar categoría
-        if (product.getCategory() == null || product.getCategory().getId() == null) {
+        if (request.getIdCategory() == null) {
             return new ResponseEntity<>(new ApiResponse(CATEGORY_NOT_FOUND_MESSAGE, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
         }
 
-        Optional<Category> categoryOpt = categoryRepository.findById(product.getCategory().getId());
+        Optional<Category> categoryOpt = categoryRepository.findById(request.getIdCategory());
         if (categoryOpt.isEmpty()) {
             return new ResponseEntity<>(new ApiResponse(CATEGORY_NOT_FOUND_MESSAGE, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
         }
 
         // Validar código de barras único
-        if (productRepository.findByBarCode(product.getBarCode()).isPresent()) {
+        if (productRepository.findByBarCode(request.getBarCode()).isPresent()) {
             return new ResponseEntity<>(new ApiResponse(BARCODE_EXISTS_MESSAGE, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
         }
 
+        Product product = new Product(
+                request.getName(),
+                request.getPrice(),
+                request.getBarCode(),
+                request.getDescription(),
+                request.getStock(),
+                request.getQuantityMinima(),
+                request.getAccountSale()
+        );
+
         product.setCategory(categoryOpt.get());
+        product.setUser(currentUser);
         Product savedProduct = productRepository.save(product);
         return new ResponseEntity<>(new ApiResponse(savedProduct, HttpStatus.OK), HttpStatus.OK);
     }

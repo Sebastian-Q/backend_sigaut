@@ -1,6 +1,7 @@
 package org.example.sigaut_backend.controller.category;
 
 import org.example.sigaut_backend.config.ApiResponse;
+import org.example.sigaut_backend.controller.category.dto.CategoryRequest;
 import org.example.sigaut_backend.models.Category;
 import org.example.sigaut_backend.services.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,8 +35,8 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse> createCategory(@RequestBody Category category) {
-        return categoryService.createCategory(category);
+    public ResponseEntity<ApiResponse> createCategory(@RequestBody CategoryRequest request) {
+        return categoryService.createCategory(request);
     }
 
     @PutMapping
